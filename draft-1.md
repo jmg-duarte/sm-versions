@@ -273,13 +273,22 @@ stateDiagram-v2
 
 State machines can be placed in the following quadrant considering which properties they have.
 
-```mermaid
-quadrantChart
-	quadrant-1 Both
-	quadrant-2 Fowards Compatibility
-	quadrant-3 N/A
-	quadrant-4 Backwards Compatibility
-```
-
 Forwards compatibility — all states have outgoing edges with `*`.
 Backwards compatibility — all states have outgoing edges containing all states from the previous machine.
+```
+ ┌──────────────────┬──────────────────┐
+ │                  │                  │
+ │                  │                  │
+ │      Fowards     │       Both       │
+ │   Compatibility  │                  │
+ │                  │                  │
+ │                  │                  │
+ ├──────────────────┼──────────────────┤
+ │                  │                  │
+ │                  │                  │
+ │        N/A       │    Backwards     │
+ │                  │  Compatibility   │
+ │                  │                  │
+ │                  │                  │
+ └──────────────────┴──────────────────┘
+```
