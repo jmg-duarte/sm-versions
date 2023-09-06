@@ -1,12 +1,12 @@
 \documentclass[a4paper]{article}
 
-\usepackage{hyperref}
 \usepackage{amsmath}
+\usepackage{cleveref}
 \usepackage{tikz}
 \usetikzlibrary{automata, positioning, arrows}
 
 \usepackage{graphicx}
-\graphicspath{ {./images/static/} }
+\graphicspath{ {./static/} }
 
 \tikzset{
 ->, % makes the edges directed
@@ -43,7 +43,7 @@ Hence, we can express our light bulb as follows:
     \label{eq:fsm_short}
 \end{equation}
 
-Which we can observe in \autoref{fig:bulb_fsm}.
+Which we can observe in \cref{fig:bulb_fsm}.
 The bulb has two states — \emph{On} and \emph{Off} — both of which transition on the application of the symbol $\text{click}$.
 
 \begin{figure}[ht]
@@ -65,8 +65,8 @@ Consider now that we are tasked with changing the state from carrying a boolean 
 describing the current light bulb intensity.
 % Foreshadowing
 Maybe in the future, the manufacturer wants the system to work with potentiometers.
-To that end, we change the state machine definition from \autoref{eq:fsm_short}
-to the following (\autoref{eq:fsm_intensity} and \autoref{fig:bulb_fsm_intensity}):
+To that end, we change the state machine definition from \cref{eq:fsm_short}
+to the following (\cref{eq:fsm_intensity} and \cref{fig:bulb_fsm_intensity}):
 
 \begin{equation}
     (\Sigma, S) = (\{click\}, \{0, 1\})
@@ -90,7 +90,7 @@ to the following (\autoref{eq:fsm_intensity} and \autoref{fig:bulb_fsm_intensity
 At first sight, this is not a problem, in code we can just replace the old boolean for an integer,
 this would be fine if every node of the swarm could be required to update, but that is not the case.
 To cope with said problem, we need to map the old states to the new ones,
-using Cambria \cite{Cambria2020} we can convert state information (see \autoref{fig:bulb_fsm_state_cambria}).
+using Cambria \cite{Cambria2020} we can convert state information (see \cref{fig:bulb_fsm_state_cambria}).
 
 \begin{figure}[ht]
     \centering
@@ -116,7 +116,7 @@ using Cambria \cite{Cambria2020} we can convert state information (see \autoref{
     \label{fig:bulb_fsm_state_cambria}
 \end{figure}
 
-Along with state conversion, we can extend Cambria to event labels (see \autoref{fig:bulb_fsm_event_cambria}),
+Along with state conversion, we can extend Cambria to event labels (see \cref{fig:bulb_fsm_event_cambria}),
 which is arguably an even better match since the labels (or payloads for more involved cases)
 are what cross the network boundary.
 
@@ -154,10 +154,10 @@ so we need to assume it cannot get the new Cambria transformation.
 Thus, we are dealing with an asymmetric scenario where to keep the system running,
 the most up-to-date system needs to pick up the slack from the older participants.
 To do so, the up-to-date system can either pre-process all information going in and out
-(as shown in \autoref{fig:cambria_on_node_translation}) or require that all participants are
+(as shown in \cref{fig:cambria_on_node_translation}) or require that all participants are
 at least capable of running arbitrary Cambria transformations and exchange data with
 the information of which transformations to apply along with the data
-(as shown in \autoref{fig:cambria_payload_with_translation}).
+(as shown in \cref{fig:cambria_payload_with_translation}).
 
 \begin{figure}
     \centering
@@ -194,7 +194,7 @@ the information of which transformations to apply along with the data
 
 Once again, consider the light bulb using the intensity as states,
 imagine that a new change was requested — instead of a toggle, we are now using
-a button that can switch intensity from $0$, to $0.5$, to $1$ and back to $0$ (see \autoref{eq:fsm_clicker}).
+a button that can switch intensity from $0$, to $0.5$, to $1$ and back to $0$ (see \cref{eq:fsm_clicker}).
 
 \begin{equation}
     (\Sigma, S) = (\{click\}, \{0, 0.5, 1\})
@@ -212,11 +212,11 @@ a button that can switch intensity from $0$, to $0.5$, to $1$ and back to $0$ (s
         \draw (05) edge[bend left, above] node{click} (1);
         \draw (1) edge[bend left, below] node{click} (0);
     \end{tikzpicture}
-    \caption{Light bulb with support for multiple intensities (as defined in \autoref{eq:fsm_clicker}).}
+    \caption{Light bulb with support for multiple intensities (as defined in \cref{eq:fsm_clicker}).}
     \label{fig:bulb_fsm_multi_intensity}
 \end{figure}
 
-Usually, we would first design the new state machine (see \autoref{fig:bulb_fsm_multi_intensity})
+Usually, we would first design the new state machine (see \cref{fig:bulb_fsm_multi_intensity})
 code it and ship it off as an update to the existing software, replacing the previous state machine.
 However, as previously discussed, our system cannot afford the luxury of keeping everyone's version in sync,
 so, if we want to support the previous version participants,
@@ -224,7 +224,7 @@ we need to keep processing their messages and moving the state machine along.
 
 To support the previous state machine, we start by merging both state machines,
 in a more formal way, we can define $merge(M_1, M_2)$
-(where $M_1$ and $M_2$ are automata as defined in \autoref{eq:fsm_short}) as:
+(where $M_1$ and $M_2$ are automata as defined in \cref{eq:fsm_short}) as:
 
 \begin{equation}
     merge(M_1, M_2) = (M_1.\Sigma \cup M_2.\Sigma, M_1.S \cup M_2.S)
@@ -253,40 +253,46 @@ in a more formal way, we can define $merge(M_1, M_2)$
     \end{tikzpicture}
     \caption{
         Visual approximation of $merge(M_1, M_2)$,
-        where $M_1$ is the state machine from \autoref{fig:bulb_fsm} and
-        $M_2$ is the state machine from \autoref{fig:bulb_fsm_intensity}.}
+        where $M_1$ is the state machine from \cref{fig:bulb_fsm} and
+        $M_2$ is the state machine from \cref{fig:bulb_fsm_intensity}.}
     \label{fig:bulb_fsm_merge}
 \end{figure}
 
-If we execute $merge$ to the state machines from \autoref{eq:fsm_intensity} and \autoref{eq:fsm_clicker} we get:
+
 
 \begin{equation}
-    \begin{array}{r@{}l}
-        merge(M_1, M_2) & {}= (\{click\} \cup \{click\}, \{0, 1\} \cup \{0, 0.5, 1\}) \\
-                        & {}= (\{click\}, \{0, 0.5, 1\})
-    \end{array}
+    \begin{split}
+        merge(M_1, M_2) & = (\{click\} \cup \{click\}, \{0, 1\} \cup \{0, 0.5, 1\}) \\
+        & = (\{click\}, \{0, 0.5, 1\})
+    \end{split}
+    \label{eq:merge_m1_m2}
 \end{equation}
 
-Which raises a problem that is not made apparent by the textual representation, but when
-displayed visually (see \autoref{fig:bulb_fsm_merge_nfa}) it becomes much more apparent —
-notice two outgoing edges from state \emph{0} with the same \emph{click} label; the state machine is now non-deterministic.
+\Cref{eq:merge_m1_m2} shows the result of merging the state machines from
+\cref{eq:fsm_intensity,eq:fsm_clicker}, however, while the result is accurate according to
+the rules we established so far, it creates a problem that is not obvious when the resulting
+state machine is represented in text.
+If we display the result in a diagram (see \cref{fig:bulb_fsm_merge_nfa}) it becomes apparent —
+the state machine is now non-deterministic (notice the two outgoing edges from state \emph{0} with the same \emph{click} label).
 
 % I should probably add this transform as an appendix or something
-We can try to make it deterministic, however since we have a single event label and
-our states' meaning is different from string matching,
-determinization will yield a single state with a single loop labeled \emph{click}
-(considering we do not have an accepting state).
+We can to make it deterministic, which will result in a single state with a self loop.
+This happens because our state machine's semantics are different from traditional
+state machines (or acceptors), our state machine expresses behavior and acceptors
+express a string matching mechanism. % This needs way better text and citations
+Hence, we cannot use a traditional determinization algorithm and must rather, define our own approach.
 
-The proposed solution is to label edges based on their version, thus removing the "collision" when merging.
-If we prefix (or suffix, writers choice) symbols with their version
-we are able to preserve the original states and keep the state machine deterministic
-as shown in \autoref{fig:bulb_fsm_merge_dfa}.
+The proposed solution is to label edges based on their version, thus removing collisions when merging.
+By attributing versions to labels we are able to preserve the original states and keep the state machine deterministic
+as shown in \cref{fig:bulb_fsm_merge_dfa}.
+The versioning mechanism is left up to the state machine designer,
+for the current work, we have opted to prefix a simple version (v1, v2, etc) to the label.
 
 \begin{equation}
-    \begin{array}{r@{}l}
+    \begin{split}
         merge(M_1, M_2) & {}= (\{v1.click\} \cup \{v2.click\}, \{0, 1\} \cup \{0, 0.5, 1\}) \\
-                        & {}= (\{v1.click, v2.click\}, \{0, 0.5, 1\})
-    \end{array}
+        & {}= (\{v1.click, v2.click\}, \{0, 0.5, 1\})
+    \end{split}
     \label{eq:fsm_merge_fixed}
 \end{equation}
 
@@ -303,7 +309,7 @@ as shown in \autoref{fig:bulb_fsm_merge_dfa}.
         \draw (05) edge[bend left, above right] node{click} (1);
         \draw (1) edge[bend left, below] node{click} (0);
     \end{tikzpicture}
-    \caption{$merge(M_1, M_2)$ results in an NFA (\autoref{eq:fsm_merge}).}
+    \caption{$merge(M_1, M_2)$ results in an NFA (\cref{eq:fsm_merge}).}
     \label{fig:bulb_fsm_merge_nfa}
 \end{figure}
 
@@ -319,9 +325,65 @@ as shown in \autoref{fig:bulb_fsm_merge_dfa}.
         \draw (05) edge[bend left, above right] node{v2.click} (1);
         \draw (1) edge[bend left, below] node{v1.click} (0);
     \end{tikzpicture}
-    \caption{$merge(M_1, M_2)$  with the new labels preserves the DFA (\autoref{eq:fsm_merge_fixed}).}
+    \caption{$merge(M_1, M_2)$  with the new labels preserves the DFA (\cref{eq:fsm_merge_fixed}).}
     \label{fig:bulb_fsm_merge_dfa}
 \end{figure}
+
+Having solved the determinism issue, consider now a living room where the lights are controlled by
+two distinct buttons, the first one is only able to send \emph{v1.click}s and the
+second one is only able to send \emph{v2.click}s.
+Consider the trace from \cref{eq:trace_1,eq:trace_2};
+in \cref{eq:trace_1} someone toggled the lights to half intensity by using the second button,
+followed by \cref{eq:trace_2} where someone clicked the button, but no action is taken.
+Looking back to \cref{fig:bulb_fsm_merge_dfa}, we can see that state \emph{0.5} does not
+have any way of handling \emph{v1.click}.
+This is problematic because it means that one of the buttons is useless until the state machine
+goes back to a state that supports it, breaking backwards compatibility.
+
+\begin{subequations}
+    \begin{align}
+        \delta(0, v2.click)   & \rightarrow 0.5 \label{eq:trace_1} \\
+        \delta(0.5, v1.click) & \rightarrow~? \label{eq:trace_2}
+    \end{align}
+\end{subequations}
+
+To fix this, we require that each new version be complete regarding previous versions'
+symbols, that is, each new version state must handle \emph{all} state labels from previous versions.
+
+% Recursive definition here, but M_n really is all previous versions and the current one.
+More formally, consider two state machines $M_n$ and $M_{n+1}$ (where $M_n$ represents all previous versions, or $M_n = M_1 \cup M_2 \cup \dots \cup M_n$),
+we require that all new states have transitions accounting for all states of previous versions:
+\begin{equation}
+    \forall l \in M_n.\Sigma, s \in M_{n+1}.S, \exists s' \in (M_n.S \land M_{n+1}.S) : s \times l \rightarrow s'
+\end{equation}
+
+With that in mind, $M_2$ defined in \cref{eq:fsm_clicker} needs to be redefined (see \cref{eq:fsm_clicker_revisited});
+resulting in the state machine displayed in \cref{fig:bulb_fsm_merge_dfa_upgraded}.
+
+\begin{equation}
+    (\Sigma, S) = (\{v1.click, v2.click\}, \{0, 0.5, 1\})
+    \label{eq:fsm_clicker_revisited}
+\end{equation}
+
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}
+        \node[state, initial] (0) {0};
+        \node[state, above right of=0] (05) {0.5};
+        \node[state, below right of=05] (1) {1};
+
+        \draw (0) edge[bend left, above left] node{v2.click} (05);
+        \draw (05) edge[right] node{v1.click} (0);
+        \draw (0) edge[above] node{v1.click} (1);
+        \draw (05) edge[bend left, above right] node{v2.click} (1);
+        \draw (1) edge[bend left, below] node{v1.click} (0);
+    \end{tikzpicture}
+    \caption{The result of $merge(M_1, M_{2}')$, where $M_{2}'$ is defined in \cref{eq:fsm_clicker_revisited}.}
+    \label{fig:bulb_fsm_merge_dfa_upgraded}
+\end{figure}
+
+
 
 
 \begin{figure}[ht]
@@ -331,44 +393,9 @@ as shown in \autoref{fig:bulb_fsm_merge_dfa}.
     \label{fig:to_potentiometer}
 \end{figure}
 
-In a regular situation, we would ship this off as an update, however, some systems
-cannot guarantee that everyone has updated, thus we are looking to keep backwards compatibility.
-
-To do that, we need to once more, consider the old payloads and states.
-We could defer any old payload to the old state machine and create mechanisms to map between both,
-however, the new machine did not appear out of nowhere, but rather, it is an evolution
-of the original one, so we should treat it as such.
-
-We start by merging the common states and transitions between them.
-
-% Picture here
-
-This way, we have a machine that can handle both cases; almost.
-
-% This doesn't render, write the formula later
-If we execute a trace: 0 \-v2\> 0.5 \-v1\> ?
-We don't know the final state because it is undefined. To achieve backwards compatibility
-we need to address this since the client needs to be able to send actions to the system.
-
-Theorem: When merging state machines, all new states must have outgoing edges for all existing transition labels.
-
-In other words, states from version vn+1 are required to handle all states from vn or less.
-
-States cannot be sinks, meaning that they always need to have at least one outgoing edge (unless they're final states of course).
-
-% Unsure about reachability
-
-Merging is defined by the union of states and transition labels from both the old and new state machine.
-
-If we now want to be able to go back and forth arbitrarily, that is from 0 to 0.5 and back to 0.
-Or from 0 to 0.5 to 1 to 0.5, we need to add more events.
-
-To keep backwards compatibility we cannot delete existing parts, but we can create new paths
-our previous rule still applies and as such, every new state will be required to handle all previous events.
-
-Unsure: if starting at the initial state, a path is not reachable with older labels,
-we can effectively create "feature gates" that stop a user from reaching a weird state.
-Feature gates can be done by ignoring previous states (not truly ideal but a valid fallback).
+% Unsure: if starting at the initial state, a path is not reachable with older labels,
+% we can effectively create "feature gates" that stop a user from reaching a weird state.
+% Feature gates can be done by ignoring previous states (not truly ideal but a valid fallback).
 
 
 \section*{Runtime-ish}
@@ -395,6 +422,9 @@ or they should be compiled with all previous versions and shipped in a single mo
 % this way our modules can simply be added cumulatively
 % we still need a dynamic dispatch mechanism to pick which function to run
 % some kind of switch statement based on the event
+
+% Implementing a PoC in Python is fairly easy, make a dict[(state, symbol), function] the delta function
+% then adding new things is simple
 
 \bibliographystyle{plain} % We choose the "plain" reference style
 \bibliography{refs} % Entries are in the refs.bib file
