@@ -20,6 +20,7 @@ class Event:
 
 
 class StateMachine:
+    version: int
     states: set[State]
     transitions: Mapping[tuple[State, Event], Callable[[], State]]
 
@@ -27,21 +28,24 @@ class StateMachine:
 
     def __init__(
         self,
+        version: int,
         initial: Callable[[], State],
         states: set[State],
         transitions: Mapping[tuple[State, Event], Callable[[], State]],
     ) -> None:
+        self.version = version
         self.current = initial()
         self.states = states
         self.transitions = transitions
 
     def __str__(self) -> str:
-        return f"StateMachine(states={self.states}, transitions={self.transitions}, current={self.current})"
+        return f"StateMachine(version={self.version}, states={self.states}, transitions={self.transitions}, current={self.current})"
 
     def on(self, event: Event) -> Self:
         next = self.transitions.get((self.current, event))
         if next is not None:
             self.current = next()
+        print(self.version, self.current)
         return self
 
 
@@ -54,7 +58,6 @@ Click = partial(Event, "Click")
 class StateMachineBuilder:
     states: set[State]
     transitions: dict[tuple[State, Event], Callable[[], State]]
-    initial: Callable[[], State]
 
     def __init__(self) -> None:
         self.states = set()
@@ -73,15 +76,14 @@ class StateMachineBuilder:
         self.transitions[(previous, on)] = next
         return self
 
-    def set_initial(self, initial: Callable[[], State]) -> Self:
-        self.initial = initial
-        return self
-
-    def build(self) -> StateMachine:
+    def build(self, version: int, initial: Callable[[], State]) -> StateMachine:
         if len(self.states) == 0:
             raise Exception("states cannot be empty")
         return StateMachine(
-            initial=self.initial, states=self.states, transitions=self.transitions
+            version=version,
+            initial=initial,
+            states=self.states,
+            transitions=self.transitions,
         )
 
 
@@ -97,17 +99,15 @@ def merge(
         m3_builder.add_state(state)
 
     for (previous, event), next in m1.transitions.items():
-        m3_builder.add_transition(previous, Event("v1." + event.name), next)
+        m3_builder.add_transition(previous, Event(f"v{m1.version}." + event.name), next)
 
     for state in m2.states:
         m3_builder.add_state(state)
 
     for (previous, event), next in m2.transitions.items():
-        m3_builder.add_transition(previous, Event("v2." + event.name), next)
+        m3_builder.add_transition(previous, Event(f"v{m2.version}." + event.name), next)
 
-    m3_builder.set_initial(initial)
-
-    return m3_builder.build()
+    return m3_builder.build(max(m1.version, m2.version) + 1, initial)
 
 
 v1_sm = (
@@ -116,8 +116,7 @@ v1_sm = (
     .add_state(Off())
     .add_transition(On(), Click(), Off)
     .add_transition(Off(), Click(), On)
-    .set_initial(Off)
-    .build()
+    .build(1, Off)
 )
 
 # print(v1_sm.current)
@@ -136,8 +135,7 @@ v2_sm = (
     .add_transition(On(), Click(), Off)
     .add_transition(Off(), Click(), Half)
     .add_transition(Half(), Click(), On)
-    .set_initial(Off)
-    .build()
+    .build(2, Off)
 )
 
 # print(v2_sm.current)
@@ -151,11 +149,6 @@ v3_sm = merge(Off, v1_sm, v2_sm)
 V1Click = partial(Event, "v1.Click")
 V2Click = partial(Event, "v2.Click")
 
-
-print(v3_sm.current)
 v3_sm.on(V2Click())
-print(v3_sm.current)
 v3_sm.on(V2Click())
-print(v3_sm.current)
 v3_sm.on(V2Click())
-print(v3_sm.current)
