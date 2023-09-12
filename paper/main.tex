@@ -19,7 +19,7 @@ initial text=$ $, % sets the text that appears on the start arrow
 \begin{document}
 
 \title{Backwards Compatible Automata}
-\author{José Duarte}
+\author{José Duarte \and Roland Kuhn}
 \date{\today}
 \maketitle
 
@@ -51,6 +51,7 @@ The bulb has two states — \emph{On} and \emph{Off} — both of which transitio
     \begin{tikzpicture}
         \node[state] (Off) {Off};
         \node[state, right of=Off] (On) {On};
+
 
         \draw (Off) edge[bend left, above] node{click} (On);
         \draw (On) edge[bend left, below] node{click} (Off);
@@ -383,20 +384,153 @@ resulting in the state machine displayed in \cref{fig:bulb_fsm_merge_dfa_upgrade
     \label{fig:bulb_fsm_merge_dfa_upgraded}
 \end{figure}
 
+\section*{Forward compatibility}
 
+So far, we have addressed backwards compatibility, that is, a state machine that is further ahead
+is able to support messages from previous versions without conflicts. However, for the whole system to work,
+old machines need to support messages from new versions without breaking.
+The main challenge now lies in ensuring that while allowing state machines with different version to diverge
+they still converge to the same state.
 
+Consider now the state machines from \cref{fig:bulb_fsm_intensity,fig:bulb_fsm_merge_dfa},
+if we run a trace composed of $[v2.click, v2.click]$, the state machines diverge, not being able to
+converge on the previously existing state (as shown in \cref{tab:transition_breakage}).
+Furthermore, if we consider the trace $[v2.click, v1.click]$ we can observe a similar issue (see \cref{tab:transition_breakage_2}),
+the state machines are not able to converge due to a clear incompatibility in their transitions.
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l|l|l|}
+        \cline{2-3}
+                                          & $V_1$ & $V_2$ \\ \hline
+        \multicolumn{1}{|l|}{$\emptyset$} & 0     & 0     \\ \hline
+        \multicolumn{1}{|l|}{v2.click}    & 0     & 0.5   \\ \hline
+        \multicolumn{1}{|l|}{v2.click}    & 0     & 1     \\ \hline
+    \end{tabular}
+    \caption{We can see both state machines do not converge and thus generate a protocol breakage.}
+    \label{tab:transition_breakage}
+\end{table}
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l|l|l|}
+        \cline{2-3}
+                                          & $V_1$ & $V_2$ \\ \hline
+        \multicolumn{1}{|l|}{$\emptyset$} & 0     & 0     \\ \hline
+        \multicolumn{1}{|l|}{v2.click}    & 0     & 0.5   \\ \hline
+        \multicolumn{1}{|l|}{v1.click}    & 1     & 0     \\ \hline
+    \end{tabular}
+    \caption{We can see both state machines do not converge and thus generate a protocol breakage.}
+    \label{tab:transition_breakage_2}
+\end{table}
+
+Fixing this requires replacing the $0.5$ state's outgoing edges with a single v1.click edge,
+as shown in \cref{fig:bulb_fsm_converge}.
+If we now revisit \cref{tab:transition_breakage,tab:transition_breakage_2},
+the first table is now "incomplete" since it does not end in a state common to both versions,
+thus, the event sequence needs to changed to $[v2.click, v1.click]$.
+When running the new event sequence against our revisited version of the automata both
+state machines converge to the same state, as shown in \cref{tab:transition_convergence}.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics*[width=5.5cm]{toggle_to_potentiometer}
-    \caption{The interface to the bulb may change, requiring new capabilities.}
-    \label{fig:to_potentiometer}
+    \begin{tikzpicture}
+        \node[state, initial] (0) {0};
+        \node[state, above right of=0] (05) {0.5};
+        \node[state, below right of=05] (1) {1};
+
+        \draw (0) edge[bend left, above left] node{v2.click} (05);
+        \draw (0) edge[above] node{v1.click} (1);
+        \draw (05) edge[bend left, above right] node{v1.click} (1);
+        \draw (1) edge[bend left, below] node{v1.click} (0);
+    \end{tikzpicture}
+    \caption{Reworked automata with convergence in mind.}
+    \label{fig:bulb_fsm_converge}
 \end{figure}
 
-% Unsure: if starting at the initial state, a path is not reachable with older labels,
-% we can effectively create "feature gates" that stop a user from reaching a weird state.
-% Feature gates can be done by ignoring previous states (not truly ideal but a valid fallback).
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l|l|l|}
+        \cline{2-3}
+                                          & $V_1$ & $V_2$ \\ \hline
+        \multicolumn{1}{|l|}{$\emptyset$} & 0     & 0     \\ \hline
+        \multicolumn{1}{|l|}{v2.click}    & 0     & 0.5   \\ \hline
+        \multicolumn{1}{|l|}{v1.click}    & 1     & 1     \\ \hline
+    \end{tabular}
+    \caption{After changing the versioned automata, they now both converge to the same common state.}
+    \label{tab:transition_convergence}
+\end{table}
 
+This works because both semantically and practically, the original path is kept intact,
+to the older version, there's still a path to the state 1, to the new version, there are paths to
+states 0.5 and 1, with the former converging to 1.
+
+Extending the state machine can be done in two ways, extending an existing path (just as we have been doing),
+or creating a completely new path. One might be tempted to generalize the approach we used previously,
+but that approach quickly fails when creating a completely new path as demonstrated in \cref{tab:transition_extension_breakage,fig:fsm_extension_breakage}.
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}
+        \node[state, initial] (S1) {$S_1$};
+        \node[state, right of=S1] (S2) {$S_2$};
+        \node[state, right of=S2] (S3) {$S_3$};
+
+        \draw (S1) edge[bend left, above] node{v1.event} (S2);
+        \draw (S2) edge[bend left, below] node{v1.event} (S1);
+        \draw (S2) edge[green, bend left, above] node{v2.event} (S3);
+        \draw (S3) edge[green, bend left, below] node{v1.event} (S2);
+    \end{tikzpicture}
+    \caption{The green edges are the most recent additions to the state machine, extending $S_2$.}
+    \label{fig:fsm_extension_breakage}
+\end{figure}
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l|l|l|}
+        \cline{2-3}
+                                          & $V_1$ & $V_2$ \\ \hline
+        \multicolumn{1}{|l|}{$\emptyset$} & $S_1$ & $S_1$ \\ \hline
+        \multicolumn{1}{|l|}{v1.event}    & $S_2$ & $S_2$ \\ \hline
+        \multicolumn{1}{|l|}{v2.event}    & $S_2$ & $S_3$ \\ \hline
+        \multicolumn{1}{|l|}{v1.event}    & $S_1$ & $S_2$ \\ \hline
+    \end{tabular}
+    \caption{Once more, the state machines do not converge.}
+    \label{tab:transition_extension_breakage}
+\end{table}
+
+Hence, when adding completely new paths, the same rules do not apply and the proper fix here is to
+use $v2.event$ instead of $v1.event$.
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}
+        \node[state, initial] (S1) {$S_1$};
+        \node[state, right of=S1] (S2) {$S_2$};
+        \node[state, right of=S2] (S3) {$S_3$};
+
+        \draw (S1) edge[bend left, above] node{v1.event} (S2);
+        \draw (S2) edge[bend left, below] node{v1.event} (S1);
+        \draw (S2) edge[orange, bend left, above] node{v2.event} (S3);
+        \draw (S3) edge[green, bend left, below] node{v2.event} (S2);
+    \end{tikzpicture}
+    \caption{The colored edges are the most recent additions to the state machine, extending $S_2$.}
+    \label{fig:fsm_extension_breakage_fixed}
+\end{figure}
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{l|l|l|}
+        \cline{2-3}
+                                          & $V_1$ & $V_2$ \\ \hline
+        \multicolumn{1}{|l|}{$\emptyset$} & $S_1$ & $S_1$ \\ \hline
+        \multicolumn{1}{|l|}{v1.event}    & $S_2$ & $S_2$ \\ \hline
+        \multicolumn{1}{|l|}{v2.event}    & $S_2$ & $S_3$ \\ \hline
+        \multicolumn{1}{|l|}{v2.event}    & $S_2$ & $S_2$ \\ \hline
+    \end{tabular}
+    \caption{The state machines now converge.}
+    \label{tab:transition_extension_breakage_fixed}
+\end{table}
 
 \section*{Runtime-ish}
 
