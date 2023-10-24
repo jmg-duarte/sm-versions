@@ -532,6 +532,26 @@ use $v2.event$ instead of $v1.event$.
     \label{tab:transition_extension_breakage_fixed}
 \end{table}
 
+Self loops are not trivial because they may change the state's contents, by doing so,
+the versions diverge.
+
+When considering state, to actually contain state, our previous model fails as older
+versions have no way of setting the new state properly.
+
+To compensate, we can rather require a special self loop transition to be designed for
+all states that allow an extra operation to "converge" the new state.
+
+the version history needs to be linear - you cannot remove edges
+
+the criteria for compatibility - math proof/formula that works
+1st write down the transform properties
+
+language inclusion - all new versions must be supersets of the old ones
+
+new traces are "prefixes" to the old traces
+
+read literature of automaton refinement
+
 \section*{Runtime-ish}
 
 The state machine must be executed in some type of runtime, which is required to support
